@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maeli Barber | Full Booking System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;700&display=swap');
+
+.font-heading { font-family: 'Bebas Neue', cursive; }
+body { font-family: 'Inter', sans-serif; background:#000; color:#fff; }
+.gold { color:#D4AF37; }
+.gold-bg { background:#D4AF37; }
+.gold-border { border-color:#D4AF37; }
+</style>
+</head>
+
+<body class="pb-10">
+
+<!-- HEADER -->
+<header class="h-60 flex flex-col justify-center items-center border-b gold-border bg-black">
+<h1 class="text-5xl font-heading tracking-widest">MAELI BARBER</h1>
+<p class="text-xs gold tracking-[0.3em] uppercase">Premium Grooming System</p>
+</header>
+
+<main class="max-w-md mx-auto px-4 -mt-6">
+
+<!-- ACTION BUTTONS -->
+<div class="grid grid-cols-2 gap-3 my-6">
+<a href="tel:0663149716" class="bg-white text-black p-3 rounded text-center font-bold text-xs">Call</a>
+<a href="#" id="waBtn" class="gold-bg text-black p-3 rounded text-center font-bold text-xs">WhatsApp</a>
+</div>
+
+<!-- BOOKING FORM -->
+<div class="bg-zinc-900 p-5 rounded-2xl mb-6">
+<h2 class="text-center mb-4 gold font-heading">Reserve Your Chair</h2>
+
+<input id="name" placeholder="Your Name" class="w-full mb-3 p-3 text-black rounded" />
+
+<select id="service" class="w-full mb-3 p-3 text-black rounded">
+<option value="Fresh Fade">Fresh Fade - R150</option>
+<option value="Beard Trim">Beard Trim - R80</option>
+<option value="Full Cut">Full Cut - R220</option>
+<option value="Kids Cut">Kids Cut - R100</option>
+<option value="Facewash">Facewash - R100</option>
+</select>
+
+<div class="grid grid-cols-2 gap-2 mb-3">
+<input type="date" id="date" class="p-3 text-black rounded" />
+<input type="time" id="time" class="p-3 text-black rounded" />
+</div>
+
+<p id="price" class="gold text-center mb-3">Total: R150</p>
+
+<button id="submitBtn" class="gold-bg text-black w-full p-3 rounded font-bold">Confirm Booking</button>
+</div>
+
+<!-- BOOKINGS LIST -->
+<div class="bg-zinc-900 p-5 rounded-2xl mb-6">
+<h2 class="mb-3">Bookings</h2>
+<ul id="bookings"></ul>
+</div>
+
+<!-- DASHBOARD -->
+<div class="bg-zinc-900 p-5 rounded-2xl">
+<h2 class="mb-3">Dashboard</h2>
+<p id="total"></p>
+<p id="count"></p>
+</div>
+
+</main>
+
+<script>
+lucide.createIcons();
+
+const prices = {
+  "Fresh Fade":150,
+  "Beard Trim":80,
+  "Full Cut":220,
+  "Kids Cut":100
+  "facewash":100,
+};
+
+let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+
+function save(){
+  localStorage.setItem('bookings', JSON.stringify(bookings));
+}
+
+function addBooking(){
+  const name = document.getElementById('name').value;
+  const service = document.getElementById('service').value;
+  const date = document.getElementById('date').value;
+  const time = document.getElementById('time').value;
+
+  if(!name || !date || !time){
+    alert('Fill all fields');
+    return;
+  }
+
+  const exists = bookings.find(b => b.date===date && b.time===time);
+  if(exists){
+    alert('Time already booked');
+    return;
+  }
+
+  bookings.push({name,service,date,time});
+  save();
+  render();
+
+  sendWhatsApp(name,service,date,time);
+}
+
+function removeBooking(i){
+  bookings.splice(i,1);
+  save();
+  render();
+}
+
+function render(){
+  const list = document.getElementById('bookings');
+  list.innerHTML = '';
+
+  let total = 0;
+
+  bookings.forEach((b,i)=>{
+    const li = document.createElement('li');
+    li.className = 'flex justify-between mb-2';
+
+    li.innerHTML = `
+      <span>${b.name} | ${b.service} | ${b.date} ${b.time}</span>
+      <button onclick="removeBooking(${i})" class="text-red-500">❌</button>
+    `;
+
+    list.appendChild(li);
+    total += prices[b.service];
+  });
+
+  document.getElementById('total').textContent = 'Revenue: R'+total;
+  document.getElementById('count').textContent = 'Bookings: '+bookings.length;
+}
+
+function sendWhatsApp(name,service,date,time){
+  const msg = `💈 NEW BOOKING %0AName: ${name}%0AService: ${service}%0ADate: ${date}%0ATime: ${time}`;
+  document.getElementById('waBtn').href = `https://wa.me/27663149716?text=${msg}`;
+}
+
+// price update
+document.getElementById('service').addEventListener('change',e=>{
+  document.getElementById('price').textContent = 'Total: R'+prices[e.target.value];
+});
+
+// prevent past date
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('date').min = today;
+
+// prevent past time
+document.getElementById('date').addEventListener('change',()=>{
+  const selected = document.getElementById('date').value;
+  const now = new Date();
+  const current = now.toISOString().split('T')[0];
+
+  if(selected === current){
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('time').min = `${h}:${m}`;
+  }
+});
+
+// button click
+document.getElementById('submitBtn').addEventListener('click',()=>{
+  addBooking();
+});
+
+render();
+</script>
+
+</body>
+</html>
